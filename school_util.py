@@ -1,11 +1,31 @@
 import requests
 from bs4 import BeautifulSoup
+from dataclasses import dataclass
+from data_extractor import DataExtractor
+
 headers = {
     "Accept": "*/*",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36 OPR/85.0.4341.60"
 }
 
-class CitiesScraper():
+
+@dataclass(slots=True)
+class School:
+    """Contains all info about school"""
+    work_link: str = None
+    name: str = None
+    phone: str = None
+    roll_number: str = None
+    address: str = None
+    email: str = None
+    website: str = None
+    principal: str = None
+    enrolment: str = None
+    ethos: str = None
+    fees: str = None
+
+
+class CitiesScraper:
     def __init__(self, url: str, cities: list):
         self.url = url
         self.cities = cities
@@ -21,22 +41,58 @@ class CitiesScraper():
         return result_links
 
     def fix_links(self, links: list):
+        """Fixing not properly cutted links for cities"""
         links = ["http://www.schooldays.ie" + i if "http" not in i else i for i in links]
         print("LEN BEFORE", len(links))
         links = list(set(links))
         print("LEN AFTER", len(links))
-        return links    # list
+        return links
 
-    # def extract_data(self, cities_list: list):
+    def extract_school_links(self, cities_list: list):
+        """Forming list of school list for city on each iteration and start to scrape"""
+        for city in cities_list:
+            city_req = requests.get(city, headers=headers)
+            city_soup = BeautifulSoup(city_req.content, 'html.parser')
+            school_links = [i['href'] for i in city_soup.find('div', id='block_main').find_all('a')]
+            school_links = ["https://www.schooldays.ie" + i for i in school_links]
+            print(city, "----- ", school_links)
+            self.extract_data(school_links)
 
+    def extract_data(self, school_list: list):
+        for item in school_list:
+            src = requests.get(item, headers=headers).content
+            soup = BeautifulSoup(src, 'html.parser')
 
+            extractor = DataExtractor(soup)
 
+            work_link = item
+            name = extractor.get_name()
+            phone = extractor.get_phone()
+            roll_number = extractor.get_roll_number()
+            address = extractor.get_address()
+            email = extractor.get_email()
+            website = ""
+            principal = ""
+            enrolment = ""
+            ethos = ""
+            fees = ""
 
+            print(work_link)
+            print(name)
+            print(phone)
+            print(roll_number)
+            print(address)
+            print(email)
+            print("-*-"*30)
 
-
-
-
-
+    def is_not_scraped(self, school_link):
+        """Check if school is already scraped"""
+        with open('log.txt') as f:
+            scraped_school = f.readlines()
+        if school_link in scraped_school:
+            return True
+        else:
+            return False
 
 # def get_cities_list():
 #     start_url = "https://www.schooldays.ie/articles/primary-Schools-in-Ireland-by-County"

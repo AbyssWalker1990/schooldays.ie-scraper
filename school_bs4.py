@@ -15,6 +15,7 @@ cities_selectors = ['sdschoollist', 'panelMun', 'panelCon', 'panelUls']
 scraper = CitiesScraper(url, cities_selectors)
 cities_list_dirty = scraper.get_cities_links()
 cities_list = scraper.fix_links(cities_list_dirty)
+scraper.extract_school_links(cities_list)
 
 
 # cities_list = get_cities_list()
