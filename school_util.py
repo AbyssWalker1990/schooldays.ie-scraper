@@ -2,27 +2,14 @@ import requests
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from data_extractor import DataExtractor
+from data_writer import DataWriter, School
+import os
+
 
 headers = {
     "Accept": "*/*",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36 OPR/85.0.4341.60"
 }
-
-
-@dataclass(slots=True)
-class School:
-    """Contains all info about school"""
-    work_link: str = None
-    name: str = None
-    phone: str = None
-    roll_number: str = None
-    address: str = None
-    email: str = None
-    website: str = None
-    principal: str = None
-    enrolment: str = None
-    ethos: str = None
-    fees: str = None
 
 
 class CitiesScraper:
@@ -60,74 +47,69 @@ class CitiesScraper:
 
     def extract_data(self, school_list: list):
         for item in school_list:
-            src = requests.get(item, headers=headers).content
-            soup = BeautifulSoup(src, 'html.parser')
+            if not self.is_not_scraped(item):
+                src = requests.get(item, headers=headers).content
+                soup = BeautifulSoup(src, 'html.parser')
 
-            extractor = DataExtractor(soup)
+                extractor = DataExtractor(soup)
 
-            work_link = item
-            name = extractor.get_name()
-            phone = extractor.get_phone()
-            roll_number = extractor.get_roll_number()
-            address = extractor.get_address()
-            email = extractor.get_email()
-            website = ""
-            principal = ""
-            enrolment = ""
-            ethos = ""
-            fees = ""
+                work_link = item
+                name = extractor.get_name()
+                phone = extractor.get_phone()
+                roll_number = extractor.get_roll_number()
+                address = extractor.get_address()
+                email = extractor.get_email()
+                website = extractor.get_website()
+                principal = extractor.get_principal()
+                enrolment = extractor.get_enrollment()
+                ethos = extractor.get_echos()
+                fees = extractor.get_fees()
 
-            print(work_link)
-            print(name)
-            print(phone)
-            print(roll_number)
-            print(address)
-            print(email)
-            print("-*-"*30)
+                """Create class with info"""
+                school_object = School(work_link=work_link, name=name, phone=phone, roll_number=roll_number,
+                                       address=address, email=email, website=website, principal=principal,
+                                       enrolment=enrolment, ethos=ethos, fees=fees)
+
+                print("Work link: ", school_object.work_link)
+                print("Name: ", school_object.name)
+                print("Phone: ", school_object.phone)
+                print("Roll number: ", school_object.roll_number)
+                print("Address: ", school_object.address)
+                print("Email: ", school_object.email)
+                print("Website: ", school_object.website)
+                print("Principal: ", school_object.principal)
+                print("Enrolment: ", school_object.enrolment)
+                print("Ethos: ", school_object.ethos)
+                print("Fees: ", school_object.fees)
+                print("-*-"*30)
+            else:
+                print("ALREADY SCRAPED: ", item)
+
+            csv_writer = DataWriter(school_object, 'school-data.csv')
+            csv_writer.write_to_csv()
 
     def is_not_scraped(self, school_link):
+        if "data" not in os.listdir():
+            os.mkdir('data')
+        if "data/log.txt" not in os.listdir():
+            with open("data/log.txt", 'w') as file:
+                print("LOG file CREATED!!!")
+
         """Check if school is already scraped"""
-        with open('log.txt') as f:
+        with open('data/log.txt') as f:
             scraped_school = f.readlines()
         if school_link in scraped_school:
             return True
         else:
             return False
 
-# def get_cities_list():
-#     start_url = "https://www.schooldays.ie/articles/primary-Schools-in-Ireland-by-County"
-#     start_req = requests.get(start_url, headers=headers)
-#     start_req_src = start_req.content
-#     start_req_soup = BeautifulSoup(start_req_src, "html.parser")
-#     city_links = start_req_soup.find('div', {'class': 'sdschoollist'}).find_all('a')
-#     city_links = [i['href'] for i in city_links]
-#
-#     # Add munster links
-#     munster_city_soup = start_req_soup.find('div', {'class': 'panelMun'}).find_all('a')
-#     munster_list = [i['href'] for i in munster_city_soup]
-#     munster_list = list(set(munster_list))
-#     munster_list.sort()
-#     print("MUSTER: ", len(munster_list))
-#     print(munster_list)
-#     city_links.extend(munster_list)
-#
-#     # Add CONNAUGHT links
-#     connaught_city_soup = start_req_soup.find('div', {'class': 'panelCon'}).find_all('a')
-#     connaught_list = [i['href'] for i in connaught_city_soup]
-#     print("Connaught: ", len(connaught_list))
-#     city_links.extend(connaught_list)
-#
-#     # Add ulster
-#     ulster_city_soup = start_req_soup.find('div', {'class': 'panelUls'}).find_all('a')
-#     ulster_list = [i['href'] for i in ulster_city_soup]
-#     print("ULSTER: ", len(ulster_list))
-#     city_links.extend(munster_list)
-#
-#     city_links.sort()
-#     city_links = list(set(city_links))
-#     city_links = ["http://www.schooldays.ie" + i if "http" not in i else i for i in city_links]
-#     for i in city_links:
-#         print(i)
-#     print(len(city_links))
-#
-#     return city_links
+    def reset_log(self):
+        answer = input('Do you need to reset your LOG file? Y/N')
+        if answer.lower() == 'y':
+            if "data/log.txt" in os.listdir():
+                os.remove("data/log.txt")
+                print("LOG file REMOVED!!!")
+            else:
+                print("There is no LOG file. Don't worry. It will be created")
+        else:
+            print("Resume to scrape using info from LOG file")
