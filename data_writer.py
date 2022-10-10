@@ -20,7 +20,7 @@ class School:
 
 
 class DataWriter:
-    def __init__(self, data, file_name):
+    def __init__(self, data=None, file_name="log.txt"):
         self.data = data
         self.file_name = file_name
 

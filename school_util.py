@@ -85,19 +85,25 @@ class CitiesScraper:
             else:
                 print("ALREADY SCRAPED: ", item)
 
+            """Writing data to csv and links to log file"""
             csv_writer = DataWriter(school_object, 'school-data.csv')
             csv_writer.write_to_csv()
+            log_writer = DataWriter()
+            log_writer.write_to_log(school_object.work_link)
+
 
     def is_not_scraped(self, school_link):
         if "data" not in os.listdir():
             os.mkdir('data')
-        if "data/log.txt" not in os.listdir():
-            with open("data/log.txt", 'w') as file:
-                print("LOG file CREATED!!!")
 
         """Check if school is already scraped"""
-        with open('data/log.txt') as f:
-            scraped_school = f.readlines()
+        try:
+            with open('data/log.txt', 'r') as f:
+                scraped_school = f.readlines()
+        except FileNotFoundError:
+            with open('data/log.txt', 'w') as f:
+                print("LOG FILE CREATED")
+                scraped_school = []
         if school_link in scraped_school:
             return True
         else:
@@ -106,9 +112,11 @@ class CitiesScraper:
     def reset_log(self):
         answer = input('Do you need to reset your LOG file? Y/N')
         if answer.lower() == 'y':
-            if "data/log.txt" in os.listdir():
+            try:
                 os.remove("data/log.txt")
                 print("LOG file REMOVED!!!")
+            except:
+                print('EXCEPTION')
             else:
                 print("There is no LOG file. Don't worry. It will be created")
         else:
