@@ -20,6 +20,7 @@ pip install requests
 5. <p>All data will be saved in data/school-data.csv</p>
 
 <h2>How it works?</h2>
+
 1. <p>Creating CitiesScraper object with url info and list of classes for scraping links of all cities</p>
 2. <p>Starting method reset_log, that asks about reset log file or resume scraping using existing one?</p>
 3. <p>Method get_cities_list getting all urls of cities</p>
